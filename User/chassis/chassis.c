@@ -12,6 +12,9 @@
 #define CHASSIS_POSITION_TIME_FACTOR      2.0f
 #define CHASSIS_POSITION_SETTLE_MARGIN_MS 1000U
 
+static float chassis_last_vx;
+static float chassis_last_vy;
+
 static float Chassis_Abs(float value)
 {
   return (value < 0.0f) ? -value : value;
@@ -113,6 +116,31 @@ void Chassis_Stop(void)
   (void)Motor_Stop(MOTOR_M4_ID);
 }
 
+void Chassis_SoftStop(void)
+{
+  float speed = sqrtf(chassis_last_vx * chassis_last_vx +
+                      chassis_last_vy * chassis_last_vy);
+  const float period_s = (float)MOVE_CONTROL_PERIOD_MS / 1000.0f;
+  const float speed_step = MOVE_DECEL_LIMIT * period_s;
+
+  while (speed > 0.0f)
+  {
+    float next_speed = speed - speed_step;
+    float scale;
+
+    if (next_speed < 0.0f) next_speed = 0.0f;
+    scale = next_speed / speed;
+    Chassis_Control(chassis_last_vx * scale,
+                    chassis_last_vy * scale,
+                    0.0f);
+    speed = next_speed;
+    HAL_Delay(MOVE_CONTROL_PERIOD_MS);
+  }
+
+  /* 速度接近零后使用原有立即停止接口。 */
+  Chassis_Stop();
+}
+
 void Chassis_Control(float vx, float vy, float wz)
 {
   MecanumWheels_t wheels;
@@ -120,6 +148,9 @@ void Chassis_Control(float vx, float vy, float wz)
   float scale = 1.0f;
   const float max_wheel_speed = (float)MOTOR_MAX_RPM * CHASSIS_PI *
                                  CHASSIS_WHEEL_DIAMETER / 60.0f;
+
+  chassis_last_vx = vx;
+  chassis_last_vy = vy;
 
   Mecanum_Inverse(vx * CHASSIS_FORWARD_SIGN,
                   vy * CHASSIS_LATERAL_SIGN,
@@ -294,5 +325,5 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     HAL_Delay(MOVE_CONTROL_PERIOD_MS);
   }
 
-  Chassis_Stop();
+  Chassis_SoftStop();
 }
