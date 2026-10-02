@@ -225,6 +225,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   float direction_sign;
   float target_distance;
   float speed_magnitude = sqrtf(vx * vx + vy * vy);
+  uint8_t stop_stable_cycles = 0U;
 
   if ((speed_magnitude <= 0.0f) || (Chassis_Abs(distance_mm) <= 0.0f))
   {
@@ -264,11 +265,18 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
                                            remaining_distance,
                                            (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
 
-    if ((remaining_distance <= MOVE_STOP_START_DISTANCE_MM) &&
-        (remaining_distance <= MOVE_STOP_DISTANCE_MM) &&
+    if ((remaining_distance <= MOVE_STOP_DISTANCE_MM) &&
         (current_speed <= MOVE_STOP_SPEED_MM_S))
     {
-      break;
+      ++stop_stable_cycles;
+      if (stop_stable_cycles >= MOVE_STOP_STABLE_CYCLES)
+      {
+        break;
+      }
+    }
+    else
+    {
+      stop_stable_cycles = 0U;
     }
 
     speed_scale = current_speed / speed_magnitude;

@@ -41,7 +41,7 @@
 /* 速度变化限制，单位 mm/s^2。 */
 #define MOVE_ACCEL_LIMIT               400.0f
 #define MOVE_DECEL_LIMIT               500.0f
-/* 停止缓冲区参数。 */`r`n#define MOVE_STOP_START_DISTANCE_MM    300.0f`r`n#define MOVE_STOP_SPEED_MM_S           30.0f`r`n#define MOVE_STOP_DISTANCE_MM          20.0f
+/* 停止判定参数。 */`r`n#define MOVE_STOP_SPEED_MM_S           30.0f`r`n#define MOVE_STOP_DISTANCE_MM          20.0f`r`n#define MOVE_STOP_STABLE_CYCLES        3U`r`n#define MOVE_STOP_DISTANCE_MM          20.0f
 
 /* EMM42 位置反馈每转的计数；用于换算轮面距离。 */
 #define CHASSIS_FEEDBACK_UNITS_PER_REVOLUTION 65536.0f
