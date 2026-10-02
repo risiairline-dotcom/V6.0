@@ -225,7 +225,6 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   float direction_sign;
   float target_distance;
   float speed_magnitude = sqrtf(vx * vx + vy * vy);
-  uint8_t stop_stable_cycles = 0U;
 
   if ((speed_magnitude <= 0.0f) || (Chassis_Abs(distance_mm) <= 0.0f))
   {
@@ -260,24 +259,15 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
                                              vx * direction_sign,
                                              vy * direction_sign);
     remaining_distance = target_distance - current_distance;
+    if (remaining_distance <= MOVE_STOP_DISTANCE_MM)
+    {
+      break;
+    }
+
     /* 按剩余距离生成刹车速度，并限制每周期的速度变化。 */
     current_speed = Chassis_ProfileUpdate(speed_magnitude,
                                            remaining_distance,
                                            (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
-
-    if ((remaining_distance <= MOVE_STOP_DISTANCE_MM) &&
-        (current_speed <= MOVE_STOP_SPEED_MM_S))
-    {
-      ++stop_stable_cycles;
-      if (stop_stable_cycles >= MOVE_STOP_STABLE_CYCLES)
-      {
-        break;
-      }
-    }
-    else
-    {
-      stop_stable_cycles = 0U;
-    }
 
     speed_scale = current_speed / speed_magnitude;
     command_vx = vx * direction_sign * speed_scale;
