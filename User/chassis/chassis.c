@@ -223,7 +223,6 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   int32_t start_m4;
   float direction_sign;
   float target_distance;
-  float previous_error = 0.0f;
   float speed_magnitude = sqrtf(vx * vx + vy * vy);
 
   if ((speed_magnitude <= 0.0f) || (Chassis_Abs(distance_mm) <= 0.0f))
@@ -246,7 +245,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     float command_vy;
     float current_yaw;
     float error;
-    float derivative;
+    float gyro_z;
     float wz;
 
     /* 读取当前移动距离。 */
@@ -282,12 +281,17 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     /* 航向误差计算。 */
     current_yaw = IMU_GetYaw();
     error = Chassis_WrapAngle(target_yaw - current_yaw);
-    derivative = (error - previous_error) /
-                 ((float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
-    previous_error = error;
+    gyro_z = IMU_GetGyroZ();
 
-    /* PID修正旋转速度。 */
-    wz = MOVE_HEADING_KP * error + MOVE_HEADING_KD * derivative;
+    /* 误差负责纠偏，陀螺仪角速度抑制旋转趋势。 */
+    if (Chassis_Abs(error) < MOVE_HEADING_DEADZONE)
+    {
+      wz = 0.0f;
+    }
+    else
+    {
+      wz = MOVE_HEADING_KP * error - MOVE_HEADING_KD * gyro_z;
+    }
     if (wz > MOVE_HEADING_MAX_WZ) wz = MOVE_HEADING_MAX_WZ;
     if (wz < -MOVE_HEADING_MAX_WZ) wz = -MOVE_HEADING_MAX_WZ;
 

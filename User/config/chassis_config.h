@@ -30,8 +30,9 @@
 #define CHASSIS_MOTOR_STABLE_DELAY_MS  10U
 
 /* 移动航向保持参数。 */
-#define MOVE_HEADING_KP                1.3f
-#define MOVE_HEADING_KD                0.8f
+#define MOVE_HEADING_KP                0.8f
+#define MOVE_HEADING_KD                0.08f
+#define MOVE_HEADING_DEADZONE          1.2f
 #define MOVE_HEADING_MAX_WZ            4.0f
 
 /* 移动控制周期。 */
