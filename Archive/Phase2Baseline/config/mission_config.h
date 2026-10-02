@@ -1,0 +1,24 @@
+#ifndef MISSION_CONFIG_H
+#define MISSION_CONFIG_H
+
+#include "chassis_config.h"
+
+/* 唯一运行模式入口；修改 MISSION_MODE 即可切换测试或正式路线。 */
+typedef enum
+{
+  MISSION_MODE_FORMAL = 0,
+  MISSION_MODE_RECTANGLE_TEST,
+  MISSION_MODE_ODOMETRY_TEST,
+  MISSION_MODE_PATH_TEST,
+  MISSION_MODE_FAST_BLOCK_TEST
+} MissionMode_t;
+
+/* 第一阶段验证：按键运行 ACTION_FAST_MOVE → Fast Block 测试。 */
+#define MISSION_MODE                  MISSION_MODE_FORMAL 
+
+/* 兼容原 Mission 宏名；速度数值统一在 chassis_config.h 调整。 */
+#define MISSION_FORMAL_MOVE_X_SPEED_MM_S    CHASSIS_MISSION_MOVE_X_SPEED_MM_S
+#define MISSION_FORMAL_MOVE_Y_SPEED_MM_S    CHASSIS_MISSION_MOVE_Y_SPEED_MM_S
+#define MISSION_FORMAL_ROTATE_SPEED_DEG_S   CHASSIS_MISSION_ROTATE_SPEED_DEG_S
+
+#endif /* MISSION_CONFIG_H */

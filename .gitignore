@@ -1,0 +1,13 @@
+# Keil 构建产物与本机调试配置
+MDK-ARM/STM32F407_CAN_CMD/
+MDK-ARM/DebugConfig/
+MDK-ARM/*.log
+MDK-ARM/JLinkLog.txt
+MDK-ARM/*.lst
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+
+# 临时文件
+*.bak
+*.tmp
+*.pyc
