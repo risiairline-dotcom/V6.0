@@ -1,5 +1,6 @@
 #include "mission_action.h"
 #include "chassis.h"
+#include "chassis_config.h"
 #include "heading_pid.h"
 #include "stm32f4xx_hal.h"
 
@@ -27,7 +28,14 @@ uint8_t Mission_Action_Start(const MissionAction *action,
   switch (action->type)
   {
     case ACTION_MOVE_X:
-      Chassis_MoveX(action->value, action->speed_rpm, action->accel);
+      {
+        float speed_mm_s = (float)action->speed_rpm *
+                           3.14159265358979323846f *
+                           CHASSIS_WHEEL_DIAMETER / 60.0f;
+        /* 使用距离闭环，并保持 Mission 规划航向。 */
+        Chassis_MoveDistance(speed_mm_s, 0.0f,
+                             action->value, rotate_target_deg);
+      }
       /* 位移完成后停止并等待机械稳定。 */
       Chassis_Stop();
       HAL_Delay(MOVE_ACTION_SETTLE_MS);
@@ -35,7 +43,14 @@ uint8_t Mission_Action_Start(const MissionAction *action,
       return 1U;
 
     case ACTION_MOVE_Y:
-      Chassis_MoveY(action->value, action->speed_rpm, action->accel);
+      {
+        float speed_mm_s = (float)action->speed_rpm *
+                           3.14159265358979323846f *
+                           CHASSIS_WHEEL_DIAMETER / 60.0f;
+        /* 使用距离闭环，并保持 Mission 规划航向。 */
+        Chassis_MoveDistance(0.0f, speed_mm_s,
+                             action->value, rotate_target_deg);
+      }
       /* 位移完成后停止并等待机械稳定。 */
       Chassis_Stop();
       HAL_Delay(MOVE_ACTION_SETTLE_MS);
@@ -43,8 +58,8 @@ uint8_t Mission_Action_Start(const MissionAction *action,
       return 1U;
 
     case ACTION_ROTATE:
-      (void)rotate_target_deg;
-      Heading_RotateRelative(action->value);
+      /* Mission 已将路线增量累计为绝对目标航向，直接交给绝对角控制器。 */
+      Heading_RotateTo(rotate_target_deg);
       /* 旋转完成后停止并等待机械稳定。 */
       Chassis_Stop();
       HAL_Delay(ROTATE_ACTION_SETTLE_MS);

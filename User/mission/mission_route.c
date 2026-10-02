@@ -8,22 +8,26 @@
 static const MissionAction mission_route[] =
 {
   /* 启动区1 → 原料区 */
-
-
+	
+    /*矩形测试*/
+	/*{ ACTION_MOVE_X, 1000.0f, 100, 80 },
+    { ACTION_MOVE_Y, 1000.0f, 100, 80 },
+	{ ACTION_MOVE_X, -1000.0f, 100, 80 },
+    { ACTION_MOVE_Y, -1000.0f, 100, 80 },*/
     /* 横移调整 */
-    //{ ACTION_MOVE_Y, -100.0f, 100, 80 },
+    { ACTION_MOVE_Y, -100.0f, 100, 80 },
 
     /* 前往原料区 */
     { ACTION_MOVE_X, 1050.0f, 100, 80 },
-    //{ ACTION_MOVE_Y, -990.0f, 100, 80 },
-    //{ ACTION_MOVE_X, -922.0f, 100, 80 },
+    { ACTION_MOVE_Y, -990.0f, 100, 80 },
+    { ACTION_MOVE_X, -922.0f, 100, 80 },
     /* 模拟抓取等待 */
-    //{ ACTION_WAIT, 1.0f, 0, 0 },
+    { ACTION_WAIT, 1.0f, 0, 0 },
     
 	/* 原料区 → 粗加工区 */
     { ACTION_ROTATE, -90.0f, 0, 0 },
-    { ACTION_ROTATE, 0.0f, 0, 0 },
-    //{ ACTION_MOVE_X, 1782.0f, 100, 80 },
+    { ACTION_ROTATE, 90.0f, 0, 0 },
+    { ACTION_MOVE_X, 1782.0f, 100, 80 },
 
     /* 粗加工区 → 暂存区 */
     //{ ACTION_ROTATE, 90.0f, 0, 0 },
@@ -31,7 +35,7 @@ static const MissionAction mission_route[] =
     //{ ACTION_MOVE_Y, 860.0f, 100, 80 },
 
     /* 模拟放置等待 */
-    //{ ACTION_WAIT, 1.0f, 0, 0 },
+    { ACTION_WAIT, 1.0f, 0, 0 },
 };
 
 uint8_t MissionRoute_IsReady(void)

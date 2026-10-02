@@ -30,24 +30,21 @@ void Heading_Test_Run(void)
       Chassis_Stop();
       IMU_ZeroYaw();
       HAL_Delay(10U);
-      Heading_RotateTo(90.0f);
+      Heading_RotateTo(-90.0f);
       heading_test_step = 1U;
       break;
-    case 1U:
-      /* 第2次：原地右转回到0° */
-      Heading_RotateTo(0.0f);
+    /*case 1U:
+      Heading_RotateTo(270.0f);
       heading_test_step = 2U;
       break;
     case 2U:
-      /* 第3次：原地左转到180° */
-      Heading_RotateTo(180.0f);
+      Heading_RotateTo(360.0f);
       heading_test_step = 3U;
       break;
     case 3U:
-      /* 第4次：原地右转回到0° */
       Heading_RotateTo(0.0f);
       heading_test_step = 4U;
-      break;
+      break;*/
     default:
       /* 第5次及以后：停止 */
       Chassis_Stop();

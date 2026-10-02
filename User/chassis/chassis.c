@@ -257,6 +257,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     float current_distance;
     float remaining_distance;
     float current_speed;
+    float profile_distance;
     float speed_scale;
     float command_vx;
     float command_vy;
@@ -273,15 +274,20 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
                                              vx * direction_sign,
                                              vy * direction_sign);
     remaining_distance = target_distance - current_distance;
-    if (remaining_distance <= MOVE_STOP_DISTANCE_MM)
+
+    /* 进入终点区域后，继续执行目标速度为零的 jerk 减速。 */
+    profile_distance = (remaining_distance <= MOVE_STOP_DISTANCE_MM) ?
+                       MOVE_STOP_DISTANCE_MM : remaining_distance;
+    current_speed = Chassis_ProfileUpdate(
+        (remaining_distance <= MOVE_STOP_DISTANCE_MM) ?
+        0.0f : speed_magnitude,
+        profile_distance,
+        (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
+    if ((remaining_distance <= MOVE_STOP_DISTANCE_MM) &&
+        (current_speed <= MOVE_FINAL_STOP_SPEED_MM_S))
     {
       break;
     }
-
-    /* 按剩余距离生成刹车速度，并限制每周期的速度变化。 */
-    current_speed = Chassis_ProfileUpdate(speed_magnitude,
-                                           remaining_distance,
-                                           (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
 
     speed_scale = current_speed / speed_magnitude;
     command_vx = vx * direction_sign * speed_scale;
@@ -308,5 +314,5 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     HAL_Delay(MOVE_CONTROL_PERIOD_MS);
   }
 
-  Chassis_NormalStop();
+  Chassis_Stop();
 }

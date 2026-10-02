@@ -30,19 +30,20 @@
 #define CHASSIS_MOTOR_STABLE_DELAY_MS  10U
 
 /* 移动航向保持参数。 */
-#define MOVE_HEADING_KP                0.8f
+#define MOVE_HEADING_KP                1.2f
 #define MOVE_HEADING_KD                0.08f
-#define MOVE_HEADING_DEADZONE          1.2f
-#define MOVE_HEADING_MAX_WZ            4.0f
+#define MOVE_HEADING_DEADZONE          0.5f
+#define MOVE_HEADING_MAX_WZ            8.0f
 
 /* 移动控制周期。 */
 #define MOVE_CONTROL_PERIOD_MS         50U
 #define MOVE_POSITION_SYNC_TIMEOUT_MS  100U
 /* 速度规划参数，单位分别为 mm/s^2 和 mm/s^3。 */
-#define MOVE_ACCEL_LIMIT               400.0f
+#define MOVE_ACCEL_LIMIT               800.0f
 #define MOVE_DECEL_LIMIT               500.0f
 #define MOVE_JERK_LIMIT                4000.0f
-#define MOVE_STOP_DISTANCE_MM          20.0f
+#define MOVE_STOP_DISTANCE_MM          78.52f
+#define MOVE_FINAL_STOP_SPEED_MM_S     20.0f
 
 /* EMM42 位置反馈每转的计数；用于换算轮面距离。 */
 #define CHASSIS_FEEDBACK_UNITS_PER_REVOLUTION 65536.0f
