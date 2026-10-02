@@ -2,6 +2,7 @@
 #include "chassis.h"
 #include "hwt101.h"
 #include "stm32f4xx_hal.h"
+#include <math.h>
 
 /* PID 参数沿用参考工程 PID_move 的 pid_choose == 1 分支。 */
 #define HEADING_KP                 3.5f
@@ -11,12 +12,8 @@
 /* 参考工程输出量级 30 与当前 Chassis_Control 的 deg/s 单位不同，初次适配上限为 100 deg/s。 */
 #define HEADING_MAX_OUTPUT         120.0f
 
-/* 保持参考工程的 50 ms 控制周期和固定时间结束方式。 */
+/* 保持参考工程的 50 ms 控制周期。 */
 #define HEADING_CONTROL_PERIOD_MS  50U
-/* 时间估算使用独立标定速度，不使用 PID 峰值输出。 */
-#define HEADING_TIME_SPEED         80.0f
-/* 固定时间裕量；运行中不根据误差提前停止。 */
-#define HEADING_TIME_MARGIN_MS     800U
 
 typedef struct
 {
@@ -109,9 +106,7 @@ void Heading_Init(void)
 
 void Heading_RotateTo(float target_deg)
 {
-  uint32_t start_tick;
-  uint32_t runtime_ms;
-  float turn_deg;
+  uint8_t stable_count = 0U;
 
   Heading_Init();
   /* 每次开始转向前完全清除上一次 PID 的动态状态。 */
@@ -119,19 +114,27 @@ void Heading_RotateTo(float target_deg)
   heading_pid.last_error = 0.0f;
   heading_pid.integral = 0.0f;
   heading_pid.output = 0.0f;
-  turn_deg = PID_WrapError(target_deg - IMU_GetYaw());
-  if (turn_deg < 0.0f)
-  {
-    turn_deg = -turn_deg;
-  }
-  runtime_ms = (uint32_t)(turn_deg * 1000.0f / HEADING_TIME_SPEED) +
-               HEADING_TIME_MARGIN_MS;
-  start_tick = HAL_GetTick();
 
-  while ((uint32_t)(HAL_GetTick() - start_tick) < runtime_ms)
+  while (1)
   {
     PID_Calc(&heading_pid, target_deg, IMU_GetYaw());
     Chassis_Control(0.0f, 0.0f, heading_pid.output);
+
+    /* 角度和角速度同时稳定约 250 ms 后结束旋转。 */
+    if ((fabsf(heading_pid.error) < 1.5f) &&
+        (fabsf(IMU_GetGyroZ()) < 3.0f))
+    {
+      stable_count++;
+      if (stable_count >= 5U)
+      {
+        break;
+      }
+    }
+    else
+    {
+      stable_count = 0U;
+    }
+
     HAL_Delay(HEADING_CONTROL_PERIOD_MS);
   }
 
