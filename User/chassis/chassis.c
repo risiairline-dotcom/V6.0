@@ -113,6 +113,20 @@ void Chassis_Stop(void)
   (void)Motor_Stop(MOTOR_M4_ID);
 }
 
+void Chassis_NormalStop(void)
+{
+  /* 速度模式下发零速度，使用电机自身加速度完成减速。 */
+  (void)Motor_Move_Velocity(MOTOR_M1_ID, 0,
+                            MOTOR_ACCEL_LEVEL_MIN, 1U);
+  (void)Motor_Move_Velocity(MOTOR_M2_ID, 0,
+                            MOTOR_ACCEL_LEVEL_MIN, 1U);
+  (void)Motor_Move_Velocity(MOTOR_M3_ID, 0,
+                            MOTOR_ACCEL_LEVEL_MIN, 1U);
+  (void)Motor_Move_Velocity(MOTOR_M4_ID, 0,
+                            MOTOR_ACCEL_LEVEL_MIN, 1U);
+  (void)Motor_Sync_Start();
+}
+
 void Chassis_Control(float vx, float vy, float wz)
 {
   MecanumWheels_t wheels;
@@ -294,5 +308,5 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     HAL_Delay(MOVE_CONTROL_PERIOD_MS);
   }
 
-  Chassis_Stop();
+  Chassis_NormalStop();
 }
