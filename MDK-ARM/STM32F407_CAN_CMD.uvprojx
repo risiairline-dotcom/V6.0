@@ -451,9 +451,19 @@
               <FilePath>..\User\chassis\chassis.c</FilePath>
             </File>
             <File>
+              <FileName>chassis_profile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\chassis\chassis_profile.c</FilePath>
+            </File>
+            <File>
               <FileName>chassis.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\User\chassis\chassis.h</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_profile.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\chassis\chassis_profile.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -2,6 +2,7 @@
 #include "chassis_config.h"
 #include "mecanum.h"
 #include "motor.h"
+#include "chassis_profile.h"
 #include "emm42.h"
 #include "hwt101.h"
 #include "stm32f4xx_hal.h"
@@ -233,6 +234,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
 
   /* 记录运动起点位置。 */
   Chassis_ReadPosition(&start_m1, &start_m2, &start_m3, &start_m4);
+  Chassis_ProfileInit();
   target_distance = Chassis_Abs(distance_mm);
   direction_sign = (distance_mm < 0.0f) ? -1.0f : 1.0f;
 
@@ -240,7 +242,8 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   {
     float current_distance;
     float remaining_distance;
-    float speed_scale = 1.0f;
+    float current_speed;
+    float speed_scale;
     float command_vx;
     float command_vy;
     float current_yaw;
@@ -265,16 +268,11 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     {
       break;
     }
-    if (remaining_distance <= MOVE_DECEL_START_DISTANCE_MM)
-    {
-      /* 剩余距离越小，平移速度越低。 */
-      speed_scale = remaining_distance / MOVE_DECEL_START_DISTANCE_MM;
-      if ((MOVE_MIN_SPEED_MM_S < speed_magnitude) &&
-          (speed_scale < MOVE_MIN_SPEED_MM_S / speed_magnitude))
-      {
-        speed_scale = MOVE_MIN_SPEED_MM_S / speed_magnitude;
-      }
-    }
+    /* 按剩余距离生成刹车速度，并限制每周期的速度变化。 */
+    current_speed = Chassis_ProfileUpdate(speed_magnitude,
+                                           remaining_distance,
+                                           (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
+    speed_scale = current_speed / speed_magnitude;
     command_vx = vx * direction_sign * speed_scale;
     command_vy = vy * direction_sign * speed_scale;
 

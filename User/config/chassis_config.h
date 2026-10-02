@@ -38,8 +38,9 @@
 /* 移动控制周期。 */
 #define MOVE_CONTROL_PERIOD_MS         50U
 #define MOVE_POSITION_SYNC_TIMEOUT_MS  100U
-#define MOVE_DECEL_START_DISTANCE_MM   300.0f
-#define MOVE_MIN_SPEED_MM_S            120.0f
+/* 速度变化限制，单位 mm/s^2。 */
+#define MOVE_ACCEL_LIMIT               400.0f
+#define MOVE_DECEL_LIMIT               500.0f
 #define MOVE_STOP_DISTANCE_MM          20.0f
 
 /* EMM42 位置反馈每转的计数；用于换算轮面距离。 */
