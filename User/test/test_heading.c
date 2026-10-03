@@ -30,7 +30,7 @@ void Heading_Test_Run(void)
       Chassis_Stop();
       IMU_ZeroYaw();
       HAL_Delay(10U);
-      Heading_RotateTo(-90.0f);
+      Heading_RotateTo(180.0f);
       heading_test_step = 1U;
       break;
     /*case 1U:

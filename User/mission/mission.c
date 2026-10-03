@@ -64,6 +64,11 @@ void Mission_Stop(void)
   Mission_Action_Reset();
 }
 
+/*
+ * 功能：推进一次 Mission 状态机。
+ * 参数：无；当前动作由内部路线索引取得。
+ * 返回：无；动作完成后切换到下一动作或结束状态。
+ */
 void Mission_Run(void)
 {
   const MissionAction *action;

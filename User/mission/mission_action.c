@@ -1,10 +1,10 @@
 #include "mission_action.h"
 #include "chassis.h"
+#include "chassis_task.h"
 #include "chassis_config.h"
 #include "heading_pid.h"
 #include "stm32f4xx_hal.h"
 
-#define MOVE_ACTION_SETTLE_MS    300U
 #define ROTATE_ACTION_SETTLE_MS  300U
 
 static uint32_t action_wait_start_tick;
@@ -32,14 +32,10 @@ uint8_t Mission_Action_Start(const MissionAction *action,
         float speed_mm_s = (float)action->speed_rpm *
                            3.14159265358979323846f *
                            CHASSIS_WHEEL_DIAMETER / 60.0f;
-        /* 使用距离闭环，并保持 Mission 规划航向。 */
-        Chassis_MoveDistance(speed_mm_s, 0.0f,
-                             action->value, rotate_target_deg);
+        /* 启动非阻塞距离任务，并保持 Mission 规划航向。 */
+        Chassis_Move_Start(speed_mm_s, 0.0f,
+                           action->value, rotate_target_deg);
       }
-      /* 位移完成后停止并等待机械稳定。 */
-      Chassis_Stop();
-      HAL_Delay(MOVE_ACTION_SETTLE_MS);
-      action_done = 1U;
       return 1U;
 
     case ACTION_MOVE_Y:
@@ -47,14 +43,10 @@ uint8_t Mission_Action_Start(const MissionAction *action,
         float speed_mm_s = (float)action->speed_rpm *
                            3.14159265358979323846f *
                            CHASSIS_WHEEL_DIAMETER / 60.0f;
-        /* 使用距离闭环，并保持 Mission 规划航向。 */
-        Chassis_MoveDistance(0.0f, speed_mm_s,
-                             action->value, rotate_target_deg);
+        /* 启动非阻塞距离任务，并保持 Mission 规划航向。 */
+        Chassis_Move_Start(0.0f, speed_mm_s,
+                           action->value, rotate_target_deg);
       }
-      /* 位移完成后停止并等待机械稳定。 */
-      Chassis_Stop();
-      HAL_Delay(MOVE_ACTION_SETTLE_MS);
-      action_done = 1U;
       return 1U;
 
     case ACTION_ROTATE:
@@ -75,6 +67,11 @@ uint8_t Mission_Action_Start(const MissionAction *action,
   }
 }
 
+/*
+ * 功能：检查当前动作是否完成。
+ * 参数：action，当前路线动作。
+ * 返回：1 表示完成，0 表示仍在执行或参数无效。
+ */
 uint8_t Mission_Action_IsDone(const MissionAction *action)
 {
   if (action == 0U)
@@ -85,6 +82,14 @@ uint8_t Mission_Action_IsDone(const MissionAction *action)
   {
     return ((HAL_GetTick() - action_wait_start_tick) >=
             (uint32_t)action->value) ? 1U : 0U;
+  }
+  if ((action->type == ACTION_MOVE_X) || (action->type == ACTION_MOVE_Y))
+  {
+    /* 当前仍以 Chassis_IsFinished() 判定完成；剩余距离接口供后续提前衔接使用。 */
+    if ((action_done == 0U) && (Chassis_IsFinished() != 0U))
+    {
+      action_done = 1U;
+    }
   }
   return action_done;
 }

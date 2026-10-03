@@ -456,6 +456,11 @@
               <FilePath>..\User\chassis\chassis_profile.c</FilePath>
             </File>
             <File>
+              <FileName>chassis_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\chassis\chassis_task.c</FilePath>
+            </File>
+            <File>
               <FileName>chassis.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\User\chassis\chassis.h</FilePath>
@@ -464,6 +469,11 @@
               <FileName>chassis_profile.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\User\chassis\chassis_profile.h</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\chassis\chassis_task.h</FilePath>
             </File>
           </Files>
         </Group>

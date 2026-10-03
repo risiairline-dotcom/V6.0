@@ -9,9 +9,6 @@
 #include <math.h>
 
 #define CHASSIS_PI 3.14159265358979323846f
-#define CHASSIS_POSITION_TIME_FACTOR      2.0f
-#define CHASSIS_POSITION_SETTLE_MARGIN_MS 1000U
-
 static float Chassis_Abs(float value)
 {
   return (value < 0.0f) ? -value : value;
@@ -210,6 +207,10 @@ void Chassis_MoveX(float distance_mm, uint16_t speed_rpm, uint8_t accel)
 {
   MecanumWheels_t wheels;
 
+  /* X 方向参数未指定时，使用 X 方向底盘默认值。 */
+  if (speed_rpm == 0U) speed_rpm = CHASSIS_MOVE_X_SPEED_DEFAULT;
+  if (accel == 0U) accel = CHASSIS_MOVE_X_ACCEL_DEFAULT;
+
   Mecanum_Inverse(distance_mm * CHASSIS_X_DISTANCE_SCALE *
                   CHASSIS_FORWARD_SIGN,
                   0.0f, 0.0f, &wheels);
@@ -220,6 +221,10 @@ void Chassis_MoveX(float distance_mm, uint16_t speed_rpm, uint8_t accel)
 void Chassis_MoveY(float distance_mm, uint16_t speed_rpm, uint8_t accel)
 {
   MecanumWheels_t wheels;
+
+  /* Y 方向参数未指定时，使用 Y 方向底盘默认值。 */
+  if (speed_rpm == 0U) speed_rpm = CHASSIS_MOVE_Y_SPEED_DEFAULT;
+  if (accel == 0U) accel = CHASSIS_MOVE_Y_ACCEL_DEFAULT;
 
   Mecanum_Inverse(0.0f,
                   distance_mm * CHASSIS_Y_DISTANCE_SCALE *
@@ -239,6 +244,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   float direction_sign;
   float target_distance;
   float speed_magnitude = sqrtf(vx * vx + vy * vy);
+  float heading_integral;
 
   if ((speed_magnitude <= 0.0f) || (Chassis_Abs(distance_mm) <= 0.0f))
   {
@@ -252,11 +258,16 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
   target_distance = Chassis_Abs(distance_mm);
   direction_sign = (distance_mm < 0.0f) ? -1.0f : 1.0f;
 
+  /* 移动航向积分项在每次移动开始时清零，并限制累计范围。 */
+  heading_integral = 0.0f;
+
   while (1)
   {
     float current_distance;
     float remaining_distance;
+    float position_error;
     float current_speed;
+    float position_speed_compensation;
     float profile_distance;
     float speed_scale;
     float command_vx;
@@ -265,6 +276,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     float error;
     float gyro_z;
     float wz;
+    const float heading_dt = (float)MOVE_CONTROL_PERIOD_MS / 1000.0f;
 
     /* 读取当前移动距离。 */
     current_distance = Chassis_ReadDistance((float)start_m1,
@@ -274,6 +286,7 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
                                              vx * direction_sign,
                                              vy * direction_sign);
     remaining_distance = target_distance - current_distance;
+    position_error = remaining_distance;
 
     /* 进入终点区域后，继续执行目标速度为零的 jerk 减速。 */
     profile_distance = (remaining_distance <= MOVE_STOP_DISTANCE_MM) ?
@@ -283,6 +296,22 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
         0.0f : speed_magnitude,
         profile_distance,
         (float)MOVE_CONTROL_PERIOD_MS / 1000.0f);
+
+    /* 根据剩余距离补偿速度，并限制补偿量避免突变。 */
+    position_speed_compensation = position_error * CHASSIS_POSITION_KP;
+    if (position_speed_compensation > (float)CHASSIS_POSITION_SPEED_LIMIT)
+    {
+      position_speed_compensation = (float)CHASSIS_POSITION_SPEED_LIMIT;
+    }
+    if (position_speed_compensation < -(float)CHASSIS_POSITION_SPEED_LIMIT)
+    {
+      position_speed_compensation = -(float)CHASSIS_POSITION_SPEED_LIMIT;
+    }
+    current_speed += position_speed_compensation;
+    /* 补偿后速度不能超过原速度规划上限，也不能为负。 */
+    if (current_speed > speed_magnitude) current_speed = speed_magnitude;
+    if (current_speed < 0.0f) current_speed = 0.0f;
+
     if ((remaining_distance <= MOVE_STOP_DISTANCE_MM) &&
         (current_speed <= MOVE_FINAL_STOP_SPEED_MM_S))
     {
@@ -301,11 +330,17 @@ void Chassis_MoveDistance(float vx, float vy, float distance_mm,
     /* 误差负责纠偏，陀螺仪角速度抑制旋转趋势。 */
     if (Chassis_Abs(error) < MOVE_HEADING_DEADZONE)
     {
+      heading_integral = 0.0f;
       wz = 0.0f;
     }
     else
     {
-      wz = MOVE_HEADING_KP * error - MOVE_HEADING_KD * gyro_z;
+      heading_integral += error * heading_dt;
+      if (heading_integral > 100.0f) heading_integral = 100.0f;
+      if (heading_integral < -100.0f) heading_integral = -100.0f;
+      wz = CHASSIS_MOVE_HEADING_KP * error +
+           CHASSIS_MOVE_HEADING_KI * heading_integral -
+           CHASSIS_MOVE_HEADING_KD * gyro_z;
     }
     if (wz > MOVE_HEADING_MAX_WZ) wz = MOVE_HEADING_MAX_WZ;
     if (wz < -MOVE_HEADING_MAX_WZ) wz = -MOVE_HEADING_MAX_WZ;

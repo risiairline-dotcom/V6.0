@@ -1,19 +1,9 @@
 #include "heading_pid.h"
 #include "chassis.h"
+#include "chassis_config.h"
 #include "hwt101.h"
 #include "stm32f4xx_hal.h"
 #include <math.h>
-
-/* PID 参数沿用参考工程 PID_move 的 pid_choose == 1 分支。 */
-#define HEADING_KP                 3.5f
-#define HEADING_KI                 0.0f
-#define HEADING_KD                 2.0f
-#define HEADING_MAX_INTEGRAL       7.0f
-/* 参考工程输出量级 30 与当前 Chassis_Control 的 deg/s 单位不同，初次适配上限为 100 deg/s。 */
-#define HEADING_MAX_OUTPUT         120.0f
-
-/* 保持参考工程的 50 ms 控制周期。 */
-#define HEADING_CONTROL_PERIOD_MS  50U
 
 typedef struct
 {
@@ -104,6 +94,11 @@ void Heading_Init(void)
            HEADING_MAX_OUTPUT);
 }
 
+/*
+ * 功能：按 50 ms 周期执行航向 PID 旋转。
+ * 参数：target_deg，绝对目标航向角，单位为度。
+ * 返回：无；到达目标且角速度稳定后返回。
+ */
 void Heading_RotateTo(float target_deg)
 {
   uint8_t stable_count = 0U;
@@ -121,11 +116,11 @@ void Heading_RotateTo(float target_deg)
     Chassis_Control(0.0f, 0.0f, heading_pid.output);
 
     /* 角度和角速度同时稳定约 250 ms 后结束旋转。 */
-    if ((fabsf(heading_pid.error) < 1.5f) &&
-        (fabsf(IMU_GetGyroZ()) < 3.0f))
+    if ((fabsf(heading_pid.error) < HEADING_STABLE_ERROR_DEG) &&
+        (fabsf(IMU_GetGyroZ()) < HEADING_STABLE_GYRO_DPS))
     {
       stable_count++;
-      if (stable_count >= 5U)
+      if (stable_count >= HEADING_STABLE_COUNT)
       {
         break;
       }

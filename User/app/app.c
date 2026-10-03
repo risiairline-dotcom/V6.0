@@ -2,6 +2,7 @@
 #include "mission.h"
 #include "button.h"
 #include "chassis.h"
+#include "chassis_task.h"
 #include "hwt101.h"
 #include "raspberry.h"
 #include "task_code.h"
@@ -80,6 +81,7 @@ void App_Init(void)
 
   /* 初始化并停止底盘，确保上电后的四轮状态可控。 */
   Chassis_Init();
+  Chassis_Task_Init();
 
   /* 最后初始化上层状态机和按钮事件。 */
   Mission_Init();
@@ -133,6 +135,7 @@ void App_Run(void)
   }
 
   /* 按当前路线推进正式 Mission。 */
+  Chassis_Task();
   Mission_Run();
 #endif
 }
